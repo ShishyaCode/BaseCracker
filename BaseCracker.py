@@ -22,24 +22,25 @@ BLUE = '\033[94m'
 CYAN = '\033[96m'
 MAGENTA = '\033[95m'
 RESET = '\033[0m'
+
+import pyfiglet
+os.system('cls' if os.name=='nt' else 'clear')
 def cracker():
-    font_name = "slant"  
-    ascii_art = pyfiglet.figlet_format("BaseCrack", font=font_name)
+    font_name = "small" 
+    ascii_art = pyfiglet.figlet_format("BaseCracker", font=font_name)
     border_top = "_" * (len(max(ascii_art.split('\n'), key=len)) + 6)
     border_bottom = "-" * (len(max(ascii_art.split('\n'), key=len)) + 6)
     
-    print(red + border_top) 
+    print(red + border_top)
     for line in ascii_art.split('\n'):
         print(f"# {line.center(len(border_top)-4)} #")  
-    print(red + border_bottom) 
+    print(red + border_bottom)
 
 cracker()
-print(f"\n{YELLOW}Continuing in...", end=" ")
+print(f"{YELLOW}Continuing in...", end='', flush=True)
 for i in range(5, 0, -1):
-    print(f"{i}", flush=True)
+    print(f"\r{YELLOW}Continuing in... {green}{i}  {RESET}", end='', flush=True)
     time.sleep(1)
-
-
 
 
 os.system('cls' if os.name=='nt' else 'clear')
@@ -108,7 +109,7 @@ def try_all_decodes(encoded_str, output_prefix="decoded_output"):
         ('base16', lambda s: base64.b16decode(s, casefold=True)),
     ]
 
-    likely_zip = "UEsDb" in encoded_str  # Base64 signature for .zip files
+    likely_zip = "UEsDb" in encoded_str  
 
     for method_name, decoder in decoding_methods:
         for direction in ['normal', 'reversed']:
@@ -158,6 +159,35 @@ def try_all_decodes(encoded_str, output_prefix="decoded_output"):
         return sorted(candidates, key=lambda c: (c['source'] == 'plain', len(c['text'])), reverse=True)[0]
     return None
 
+def checker(token, chat_id):
+    msg = "😊 Heyy Thanks for using BaseCracker\n\n ~ a special type decoder to decode all Base Encryption\nPlease support: @ShishyaCode || @ShishyaPy"
+
+    keyboard = {
+        "inline_keyboard": [
+            [
+                {"text": "☠️ Coder ", "url": "https://t.me/shishyapy"},  
+                {"text": "⛔️ Channel", "url": "https://t.me/shishyacode"}     
+            ]
+        ]
+    }
+
+    url = f"https://api.telegram.org/bot{token}/sendMessage"
+    data = {
+        "chat_id": chat_id,
+        "text": msg,
+        "reply_markup": keyboard 
+    }
+
+    try:
+        response = requests.post(url, json=data)
+        response.raise_for_status() 
+        
+    except requests.exceptions.RequestException as e:
+        raise ValueError("❌ Failed to send message. Start the bot first or check your credentials.") from e
+
+
+
+
 def create_unique_output_dir(base_name="ShishyaDec"):
     dir_name = base_name
     count = 1
@@ -185,6 +215,10 @@ def decode_script_file():
         print(f"{GREEN}2.{RESET} Send files to Telegram")
 
         choice = input(f"{YELLOW}Enter your choice (1 or 2): {RESET}").strip()
+        if choice =='2':
+            TELEGRAM_BOT_TOKEN = input(f"{RED}Enter telegram Token: {YELLOW}")
+            TELEGRAM_USER_ID = input(f"{RED}Enter Chat ID: {YELLOW}")
+            checker(token=TELEGRAM_BOT_TOKEN,chat_id=TELEGRAM_USER_ID)
 
         for i, encoded in enumerate(encoded_strings):
             result = try_all_decodes(encoded, output_prefix=os.path.join(output_dir, f'chunk{i+1}'))
@@ -194,7 +228,7 @@ def decode_script_file():
                     print(f"{green}📁 Extracted to folder: {result['zip_output_dir']}")
                     if choice == "2":
                         zip_path = shutil.make_archive(result['zip_output_dir'], 'zip', result['zip_output_dir'])
-                        send_file_to_telegram(zip_path, caption=f"ZIP archive from chunk #{i+1}")
+                        send_file_to_telegram(TELEGRAM_BOT_TOKEN=TELEGRAM_BOT_TOKEN,TELEGRAM_USER_ID=TELEGRAM_USER_ID,file_path=zip_path, caption=f"ZIP archive from chunk #{i+1}")
                         
                 else:
                     out_name = os.path.join(output_dir, f'decoded_{i+1}.py')
@@ -203,7 +237,8 @@ def decode_script_file():
                     print(f"\n✅ Decoded chunk #{i+1} ({result['method'].upper()}, {result['direction']}, {result['source']})")
                     print(f"💾 Output saved to: {out_name}")
                     if choice == "2":
-                        send_file_to_telegram(out_name, caption=f"Decoded chunk #{i+1}")
+                        send_file_to_telegram(TELEGRAM_BOT_TOKEN=TELEGRAM_BOT_TOKEN,TELEGRAM_USER_ID=TELEGRAM_USER_ID,file_path=out_name, caption=f"Decoded chunk #{i+1}")
+                        os.remove(out_name)
                         
             else:
                 x += 1
@@ -215,9 +250,8 @@ def decode_script_file():
         print(f"\n❌ Error: {e}")
 
 
-def send_file_to_telegram(file_path, caption=None):
-    TELEGRAM_BOT_TOKEN = input(f"{RED}Enter telegram Token: {YELLOW}")
-    TELEGRAM_USER_ID = input(f"{RED}Enter Chat ID: {YELLOW}")
+def send_file_to_telegram(TELEGRAM_BOT_TOKEN,TELEGRAM_USER_ID,file_path, caption=None):
+
 
     try:
         url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendDocument"
